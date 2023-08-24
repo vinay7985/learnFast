@@ -48,19 +48,15 @@ def delete_item(id: int, db: Session = Depends(get_db)):
     return {"massage": "deleted successfully"}
 
 @app.put("/item/{id}",response_model=schemas.Items)
-def update_item(id: int, name:str,description:str, tax:str,db: Session = Depends(get_db)):
+def update_item(id: int, item:schemas.UpdateItem, db: Session = Depends(get_db)):
 
     try:
-          item=db.query(models.Items).filter(models.Items.id==id).first()
-          item.name =name
-          item.description = description
-          item.tax = tax
-          db.add(item)
+          item2=db.query(models.Items).filter(models.Items.id==id).first()
+          for attr, value in item.dict().items():
+              setattr(item2, attr, value)
           db.commit()
-          return item
+          db.refresh(item2)
+          return item2
     except:
           return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"item with id {id} not found")
     
-
-
-   
