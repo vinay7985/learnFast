@@ -5,6 +5,7 @@ import models,schemas
 from models import Items
 from schemas import  Items
 from sqlalchemy.orm import Session
+import crud as _services
 
 app = FastAPI()
 def get_db():
@@ -58,5 +59,14 @@ def update_item(id: int, item:schemas.UpdateItem, db: Session = Depends(get_db))
           db.refresh(item2)
           return item2
     except:
-          return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"item with id {id} not found")
+          return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"item with id {id} not found")    
+    
+
+@app.post("/user",response_model=schemas.User)
+def create_item(item:schemas.User, db:Session=Depends(get_db)):
+    db_item=models.User(**item.dict())
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
     
