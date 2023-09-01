@@ -5,7 +5,7 @@ import models,schemas
 from models import Items
 from schemas import  Items
 from sqlalchemy.orm import Session
-import crud as _services
+import services as _services
 
 app = FastAPI()
 def get_db():
@@ -62,11 +62,15 @@ def update_item(id: int, item:schemas.UpdateItem, db: Session = Depends(get_db))
           return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"item with id {id} not found")    
     
 
-@app.post("/user",response_model=schemas.User)
-def create_item(item:schemas.User, db:Session=Depends(get_db)):
-    db_item=models.User(**item.dict())
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
+@app.post("/api/users")
+async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = await _services.get_user_by_email(email=user.email, db=db)
     
+    if db_user:
+        raise HTTPException(
+            status_code=400,
+            detail="User with that email already exists")
+
+    user = await _services.create_user(user=user, db=db)
+
+    return await _services.create_token(user=user)

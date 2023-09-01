@@ -3,3 +3,6 @@ uvicorn
 sqlalchemy
 psycopg2
 posslib
+jwt
+email_validator
+bcrypt
