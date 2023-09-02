@@ -57,15 +57,6 @@ async def authenticate_user(email: str, password: str, db: _orm.Session):
 
     return user
 
-async def create_token(user: _models.User):
-    user_obj = _schemas.User.from_orm(user)
-
-    user_dict = user_obj.dict()
-    del user_dict["date_created"]
-
-    token = _jwt.encode(user_dict, _JWT_SECRET)
-
-    return dict(access_token=token, token_type="bearer")
 
 
 async def get_current_user(db: _orm.Session = _fastapi.Depends(get_db), token: str = _fastapi.Depends(oauth2schema)):
