@@ -1,5 +1,5 @@
 import dotenv as _dotenv
-import jwt as _jwt
+import jwt 
 import sqlalchemy.orm as _orm
 import passlib.hash as _hash
 import email_validator as _email_check
@@ -57,12 +57,22 @@ async def authenticate_user(email: str, password: str, db: _orm.Session):
 
     return user
 
+async def create_token(user: _models.User):
 
+    user_obj = _schemas.User.from_orm(user)
+    # return user_obj
+    user_dict = user_obj.dict()
+    # return user_dict
+    del user_dict["date_created"]
+
+    token = jwt.encode(user_dict, _JWT_SECRET, algorithm='HS256')
+
+    return dict(access_token=token, token_type="bearer")
 
 async def get_current_user(db: _orm.Session = _fastapi.Depends(get_db), token: str = _fastapi.Depends(oauth2schema)):
 
     try:
-        payload = _jwt.decode(token, _JWT_SECRET, algorithms=["HS256"])
+        payload = jwt.decode(token, _JWT_SECRET, algorithms=["HS256"])
         user = db.query(_models.User).get(payload["id"])
     
     except:

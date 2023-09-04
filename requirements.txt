@@ -3,6 +3,6 @@ uvicorn
 sqlalchemy
 psycopg2
 posslib
-jwt
+pyjwt
 email_validator
 bcrypt

@@ -1,11 +1,15 @@
 from typing import Dict, List, Union
-from fastapi import FastAPI, Request, Depends, HTTPException, status
+from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
 from database import engine,SessionLocal
 import models,schemas
 from models import Items
 from schemas import  Items
 from sqlalchemy.orm import Session
 import services as _services
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+templates = Jinja2Templates(directory="templates")
 
 app = FastAPI()
 def get_db():
@@ -16,8 +20,16 @@ def get_db():
         db.close()   
 
 
-
 models.Base.metadata.create_all(engine)
+
+
+
+
+@app.get("/index", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("index.html",  {"request": request})
+
+
 
 @app.get("/items")
 def get_all_items(db: Session = Depends(get_db)):

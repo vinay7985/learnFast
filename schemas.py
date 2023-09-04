@@ -19,14 +19,16 @@ class UserCreate(UserBase):
     password: str
 
     class Config:
-        orm_mode = True
+        from_attributes=True
+class User(BaseModel):
 
-class User(UserBase):
+    email: str
+
     id: int
     date_created: _dt.datetime
 
     class Config:
-        orm_mode = True
+        from_attributes=True
 class _PostBase(BaseModel):
     post_text: str
 
@@ -39,4 +41,4 @@ class Post(_PostBase):
     date_created: _dt.datetime
 
     class Config:
-        orm_mode = True
+       from_attributes=True
