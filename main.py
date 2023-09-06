@@ -10,6 +10,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import jwt
+from fastapi.encoders import jsonable_encoder
+
 
 
 
@@ -22,63 +24,55 @@ def get_db():
         db.close()   
 
 _JWT_SECRET = 'JWT_SECRET'
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 models.Base.metadata.create_all(engine)
-
-def fake_hash_password(password: str):
-    return "fakehashed" + password
 
 
 templates = Jinja2Templates(directory="templates")
 @app.get("/login", response_class=HTMLResponse )
-async def login(request: Request):
+async def login_page(request: Request):
     return templates.TemplateResponse('index.html', {'request': request})
 
-@app.post("/login"  )
-async def login( request: Request, form_data:OAuth2PasswordRequestForm=Depends(), db: Session = Depends(get_db)):
-    # form=await request.form()
-    # email= form.get("email")
-    # password= form.get("password")
+@app.post("/login" )
+async def login( email:str, password:str, db: Session = Depends(get_db)):
+    
     errors=[]
-    # try:
-    # user=db.query(models.User).filter(models.User.email == email).first()
-    user=_services.get_user_by_email(db=db, email=form_data.email)
-    if user is None:
+    try:
+       user=db.query(models.User).filter(models.User.email == email).first()
+
+       if user is None:
            errors.append('Email is not exist')
-           return templates.TemplateResponse('index.html', {'request': request, 'errors':errors})
-    else:
-             if _services.varify_password(form_data.password, user.hashed_password):
-                 token=_services.create_token(user)
-                 return {"access_token":token, "token_type":"bearer"}
-            #  if hash.varify_password(password, user.password):
-            #      data={"sub":email}
-            #      return data
-                #  jwt_token= jwt.encode(data, _JWT_SECRET , algorithm='HS256')
-                #  Response.set_cookie(key="access_token", value=f"Bearer {jwt_token}", httponly=True)
-                #  msg="Login successfully"
-                #  return templates.TemplateResponse('index.html', {'request': request, 'msg':msg})
-            #   else:
-            #      errors.append("Invalid Password")
-            #      return templates.TemplateResponse('index.html', {'request': request, 'errors':errors})
-    #  except:
-    #     errors.append('something went wrong')
-    #     return templates.TemplateResponse('index.html', {'request': request, 'errors':errors})
+          
+           return {'errors':errors}
+       else:
+            user=db.query(models.User).filter(models.User.hashed_password == password).first()
+            if  user is None:
+                 data={"sub":email}
+                 jwt_token= jwt.encode(data, _JWT_SECRET , algorithm="HS256")
+                 _services.create_token(user)
+                 msg="Login successfully"
+                 return { 'access_token':jwt_token, 'token_Type': 'bearer', 'msg':msg}
+            else:
+                 errors.append("Invalid Password")
+                 return { 'errors':errors}
+    except:
+        errors.append('something went wrong')
+        return {'errors':errors}
 
-
-@app.get("/items")
-def get_all_items(db: Session = Depends(get_db)):
+@app.get("/items/")
+def get_all_items(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
     posts = db.query(models.Items).all()
-    return {"data": posts}
+    return {"data": posts, "token": token}
 
 @app.get("/items/{id}")
-def read_item(id: int,db: Session = Depends(get_db)):
+def read_item(id: int,token: Annotated[str, Depends(oauth2_scheme)],db: Session = Depends(get_db)):
    posts = db.query(models.Items).filter(models.Items.id ==id).first()
    
-   return {"data": posts}
+   return {"data": posts, "token": token}
 
 @app.post("/items",response_model=schemas.Items)
-def create_item(item:schemas.Items, db:Session=Depends(get_db)):
+def create_item(token: Annotated[str, Depends(oauth2_scheme)], item:schemas.Items, db:Session=Depends(get_db)):
     db_item=models.Items(**item.dict())
     db.add(db_item)
     db.commit()
@@ -87,16 +81,16 @@ def create_item(item:schemas.Items, db:Session=Depends(get_db)):
 
 
 @app.delete("/item/{id}")
-def delete_item(id: int, db: Session = Depends(get_db)):
+def delete_item(id: int,token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
     item=db.query(models.Items).filter(models.Items.id==id)
     if not item.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"item with id {id} not found")
     item.delete(synchronize_session=False)
     db.commit()
-    return {"massage": "deleted successfully"}
+    return {"massage": "deleted successfully", "token": token}
 
 @app.put("/item/{id}",response_model=schemas.Items)
-def update_item(id: int, item:schemas.UpdateItem, db: Session = Depends(get_db)):
+def update_item(id: int, item:schemas.UpdateItem, token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
 
     try:
           item2=db.query(models.Items).filter(models.Items.id==id).first()
@@ -121,3 +115,10 @@ async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     user = await _services.create_user(user=user, db=db)
 
     return await _services.create_token(user=user)
+
+# @app.post("/token")
+# async def get_token(user: schemas.User, db : Session = Depends(get_db)):
+#     data=jsonable_encoder(user)
+#     if data['email']==models.User['email'] and data['password']==models.User['password']:
+#      token=jwt.encode(data,_JWT_SECRET, algorithm='HS256')
+#      return {'access_token':token}

@@ -18,6 +18,7 @@ class UpdateItem(BaseModel):
     tax: Optional[str]=None 
 
 class UserBase(BaseModel):
+    username: str
     email: str
 
 class UserCreate(UserBase):
