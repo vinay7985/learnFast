@@ -10,12 +10,13 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import jwt
-from fastapi.encoders import jsonable_encoder
-
+# from .routers import  user
 
 
 
 app = FastAPI()
+
+# app.include_router(user.router)
 def get_db():
     db=SessionLocal()
     try:
@@ -29,33 +30,33 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 models.Base.metadata.create_all(engine)
 
 
-templates = Jinja2Templates(directory="templates")
-@app.get("/login", response_class=HTMLResponse )
-async def login_page(request: Request):
-    return templates.TemplateResponse('index.html', {'request': request})
+# templates = Jinja2Templates(directory="templates")
+# @app.get("/login", response_class=HTMLResponse )
+# async def login_page(request: Request):
+#     return templates.TemplateResponse('index.html', {'request': request})
 
-@app.post("/login" )
-async def login( email:str, password:str, db: Session = Depends(get_db)):
-    
+@app.post("/token" )
+async def login( token: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
+    email= token.username
+    password= token.password
     errors=[]
     try:
-       user=db.query(models.User).filter(models.User.email == email).first()
+       user = await _services.get_user_by_email(email=email, db=db)
 
-       if user is None:
-           errors.append('Email is not exist')
-          
-           return {'errors':errors}
-       else:
-            user=db.query(models.User).filter(models.User.hashed_password == password).first()
-            if  user is None:
-                 data={"sub":email}
-                 jwt_token= jwt.encode(data, _JWT_SECRET , algorithm="HS256")
-                 _services.create_token(user)
-                 msg="Login successfully"
-                 return { 'access_token':jwt_token, 'token_Type': 'bearer', 'msg':msg}
-            else:
-                 errors.append("Invalid Password")
-                 return { 'errors':errors}
+       if not user:
+        errors.append('Email is not exist')
+        return {'errors':errors}
+    
+       if not user.verify_password(password):
+        errors.append('Password not found')
+        return {'errors':errors}
+       
+       data={"sub":email}
+       jwt_token= jwt.encode(data, _JWT_SECRET , algorithm="HS256")
+       _services.create_token(user)
+       msg="Login successfully"
+       return { 'access_token':jwt_token, 'token_Type': 'bearer'}
+
     except:
         errors.append('something went wrong')
         return {'errors':errors}
