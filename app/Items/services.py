@@ -7,8 +7,8 @@ import fastapi as _fastapi
 import fastapi.security as _security
 
 import database as _database
-import schemas as _schemas
-import models as _models
+import app.Items.schemas as _schemas
+import app.Items.models as _models
 
 
 _dotenv.load_dotenv()
