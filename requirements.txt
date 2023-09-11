@@ -8,3 +8,4 @@ email_validator
 bcrypt
 jinja2
 python-multipart
+httpx

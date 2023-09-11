@@ -2,10 +2,11 @@ from fastapi import APIRouter
 from typing import Dict, List, Union, Annotated
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
 from database import engine,SessionLocal
-# import models,schemas 
+
 from app.Items import models,schemas
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.Items.schemas import  Login
+
 from sqlalchemy.orm import Session
 import app.Items.services as _services
 from fastapi.responses import HTMLResponse
@@ -26,7 +27,7 @@ def get_db():
         db.close()   
 
 _JWT_SECRET = 'JWT_SECRET'
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
 
 # templates = Jinja2Templates(directory="templates")
@@ -34,31 +35,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 # async def login_page(request: Request):
 #     return templates.TemplateResponse('index.html', {'request': request})
 
-@router.post("/token" )
-async def login( token: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
-    email= token.username
-    password= token.password
-    errors=[]
-    try:
-       user = await _services.get_user_by_email(email=email, db=db)
 
-       if not user:
-        errors.append('Email is not exist')
-        return {'errors':errors}
-    
-       if not user.verify_password(password):
-        errors.append('Password not found')
-        return {'errors':errors}
-       
-       data={"sub":email}
-       jwt_token= jwt.encode(data, _JWT_SECRET , algorithm="HS256")
-       _services.create_token(user)
-       msg="Login successfully"
-       return { 'access_token':jwt_token, 'token_Type': 'bearer'}
-
-    except:
-        errors.append('something went wrong')
-        return {'errors':errors}
 
 @router.get("/items/")
 def get_all_items(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
@@ -103,22 +80,3 @@ def update_item(id: int, item:schemas.UpdateItem, token: Annotated[str, Depends(
           return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"item with id {id} not found")    
     
 
-@router.post("/api/users")
-async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = await _services.get_user_by_email(email=user.email, db=db)
-    
-    if db_user:
-        raise HTTPException(
-            status_code=400,
-            detail="User with that email already exists")
-
-    user = await _services.create_user(user=user, db=db)
-
-    return await _services.create_token(user=user)
-
-# @app.post("/token")
-# async def get_token(user: schemas.User, db : Session = Depends(get_db)):
-#     data=jsonable_encoder(user)
-#     if data['email']==models.User['email'] and data['password']==models.User['password']:
-#      token=jwt.encode(data,_JWT_SECRET, algorithm='HS256')
-#      return {'access_token':token}
