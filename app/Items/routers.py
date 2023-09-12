@@ -1,14 +1,14 @@
 from fastapi import APIRouter
 from typing import Dict, List, Union, Annotated
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
-from database import engine,SessionLocal
+from project.database import engine,SessionLocal
 
-from app.Items import models,schemas
+from project.app.Items import models,schemas
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from app.Items.schemas import  Login
+from project.app.Items.schemas import  Login
 
 from sqlalchemy.orm import Session
-import app.Items.services as _services
+import project.app.Items.services as _services
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -27,7 +27,7 @@ def get_db():
         db.close()   
 
 _JWT_SECRET = 'JWT_SECRET'
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/token", auto_error=False)
 
 
 # templates = Jinja2Templates(directory="templates")

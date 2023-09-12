@@ -1,22 +1,22 @@
 from fastapi import APIRouter
 from typing import Dict, List, Union, Annotated
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
-from database import engine,SessionLocal
-from app.Items import models,schemas
+from project.database import engine,SessionLocal
+from project.app.Items import models,schemas
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from app.Items.schemas import  Login
+from project.app.Items.schemas import  Login
 from sqlalchemy.orm import Session
-import app.Items.services as _services
-import app.users.services as _services
+import project.app.Items.services as _services
+import project.app.users.services as _services
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import jwt
-from app.Items import services as _services
-from app.users import services as _services
-import app.users.schemas as schemas
+from project.app.Items import services as _services
+from project.app.users import services as _services
+import project.app.users.schemas as schemas
 
-router_users = APIRouter(prefix='/api', tags=["users"])
+router_users = APIRouter(prefix='/api', tags=["Users"])
                   
 
 

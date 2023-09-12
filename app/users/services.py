@@ -6,11 +6,11 @@ import email_validator as _email_check
 import fastapi as _fastapi
 import fastapi.security as _security
 
-import database as _database
-import app.Items.schemas as _schemas
-import app.users.schemas as _schemas
-import app.Items.models as _models
-import app.users.models as _models
+import project.database as _database
+import project.app.Items.schemas as _schemas
+import project.app.users.schemas as _schemas
+import project.app.Items.models as _models
+import project.app.users.models as _models
 
 
 _dotenv.load_dotenv()
